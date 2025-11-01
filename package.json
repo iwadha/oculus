@@ -1,0 +1,24 @@
+{
+  "name": "oculus",
+  "private": true,
+  "version": "0.0.1",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "pnpm --filter @oculus/web dev",
+    "dev:api": "uv run --directory apps/api uvicorn api.main:app --reload --host 0.0.0.0 --port 8000"
+  },
+  "dependencies": {
+    "next": "^14.2.33",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.2",
+    "@types/react": "^19.2.2",
+    "eslint": "^9.39.0",
+    "typescript": "^5.9.3"
+  }
+}
