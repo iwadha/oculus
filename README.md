@@ -99,3 +99,26 @@ Small PRs, atomic commits
 Tests for workers + pairing logic
 Keep SQL in migrations only
 ```
+
+## ✅ Module 2 — Real-Time Trade Feed + Dashboard KPIs (Completed)
+
+Oculus now supports a fully reliable real-time stream of copy trades via SSE,
+with automated recovery and burst control.
+
+### Key Features
+- Live streaming from database (`oculus_trades_view`)
+- Cursor-based replay on restart (no gaps, no duplicates)
+- Configurable polling + burst limiting for stability
+- Backend KPI cache updates in real time
+- Works locally with mock mode and in production with DB mode
+
+### Environment Flags (Required)
+```env
+OCULUS_STREAM_SOURCE=db            # mock | db
+OCULUS_DB_POLL_MS=500
+OCULUS_DB_POLL_MAX_PER_TICK=250
+
+OCULUS_DB_CURSOR_ENABLED=true
+OCULUS_DB_CURSOR_STORAGE=supabase
+OCULUS_DB_CURSOR_TABLE=oculus_cursor
+OCULUS_DB_CURSOR_STREAM_KEY=trades_view
