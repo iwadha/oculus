@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* -------------------------------------------------------------------------- */
+/*  Global styles and base variables                                          */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  --radius: 12px;
+}
+
+/* Use modern border-box sizing everywhere */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Full-height layout baseline */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Improve font rendering & scrolling */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tailwind’s base layer already normalizes most defaults, but these help ensure
+   your custom variable-based components and shadcn/ui components render cleanly. */

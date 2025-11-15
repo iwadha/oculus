@@ -1,11 +1,10 @@
-# app/services/mock_events.py
 import asyncio, random, time
 from .bus import bus
-from .kpi_cache import record as record_kpi 
+from .kpi_cache import record as record_kpi
 
-TOKENS = ["MINT123","MINTABC","MINTXYZ","MINT777"]
-WALLETS = ["Athena","Zeus","Ares","Apollo","Hera","Hermes"]
-CREATORS = ["Cr8r111","Cr8r222","Cr8r333","Cr8r444"]
+TOKENS = ["MINT123", "MINTABC", "MINTXYZ", "MINT777"]
+WALLETS = ["Athena", "Zeus", "Ares", "Apollo", "Hera", "Hermes"]
+CREATORS = ["Cr8r111", "Cr8r222", "Cr8r333", "Cr8r444"]
 
 def _sample_trade() -> dict:
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -18,7 +17,7 @@ def _sample_trade() -> dict:
     return {
         "type": "trade",
         "wallet": random.choice(WALLETS),
-        "action": random.choice(["BUY","SELL"]),
+        "action": random.choice(["BUY", "SELL"]),
         "token": random.choice(TOKENS),
         "creator": random.choice(CREATORS),
         "ts": now,
@@ -32,7 +31,8 @@ def _sample_trade() -> dict:
 async def run_mock_event_loop(hz: float, stop_event: asyncio.Event):
     delay = 1.0 / max(hz, 0.1)
     while not stop_event.is_set():
-        await bus.publish(_sample_trade())
-        record_kpi(_sample_trade()) 
+        # ✅ generate one trade and reuse for both bus + KPI
+        trade = _sample_trade()
+        await bus.publish(trade)
+        record_kpi(trade)
         await asyncio.sleep(delay)
-

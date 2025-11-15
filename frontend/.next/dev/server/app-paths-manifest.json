@@ -1,0 +1,7 @@
+{
+  "/compare/page": "app/compare/page.js",
+  "/creators/page": "app/creators/page.js",
+  "/page": "app/page.js",
+  "/trades/page": "app/trades/page.js",
+  "/wallets/page": "app/wallets/page.js"
+}

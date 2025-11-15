@@ -11,8 +11,10 @@ from .bus import bus
 from .kpi_cache import record as record_kpi
 
 # -------- Env & defaults --------
-SUPABASE_URL = settings.SUPABASE_URL
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or settings.SUPABASE_ANON_KEY  # prefer service-role
+# Use environment variables directly (same pattern as sql.py, ladder.py)
+SUPABASE_URL = os.environ["SUPABASE_URL"]
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ["SUPABASE_ANON_KEY"]
+
 
 TABLE_COPY = os.getenv("OCULUS_TABLE_TRADES", "oculus_trades_view")
 PK_COPY = os.getenv("OCULUS_COPY_PK_COL", "id")
@@ -113,20 +115,27 @@ async def run_db_stream(stop_evt: asyncio.Event) -> None:
     """
     sb = _sb()
     since_id: int = await _read_cursor(sb)  # 0 if disabled / not set
-    log.info("db_stream start: table=%s pk=%s poll_ms=%s max_per_tick=%s since_id=%s cursor_enabled=%s",
-             TABLE_COPY, PK_COPY, POLL_MS, MAX_PER_TICK, since_id, CURSOR_ENABLED)
+    log.info(
+        "db_stream start: table=%s pk=%s poll_ms=%s max_per_tick=%s since_id=%s cursor_enabled=%s",
+        TABLE_COPY, PK_COPY, POLL_MS, MAX_PER_TICK, since_id, CURSOR_ENABLED,
+    )
 
     try:
         while not stop_evt.is_set():
             try:
-                q = (
-                    sb.table(TABLE_COPY)
-                    .select("*")
-                    .gt(PK_COPY, since_id)
-                    .order(PK_COPY, desc=False)
-                    .limit(MAX_PER_TICK)
+                # ✅ Wrap blocking Supabase .execute() inside a thread
+                rows: List[Dict[str, Any]] = await asyncio.to_thread(
+                    lambda: (
+                        sb.table(TABLE_COPY)
+                        .select("*")
+                        .gt(PK_COPY, since_id)
+                        .order(PK_COPY, desc=False)
+                        .limit(MAX_PER_TICK)
+                        .execute()
+                        .data
+                        or []
+                    )
                 )
-                rows: List[Dict[str, Any]] = q.execute().data or []
 
                 if not rows:
                     log.debug("idle: no new rows > %s; sleep=%sms", since_id, POLL_MS)
@@ -142,13 +151,13 @@ async def run_db_stream(stop_evt: asyncio.Event) -> None:
                 max_id = _coerce_int(rows[-1].get(PK_COPY), since_id)
                 burst_capped = len(rows) == MAX_PER_TICK
 
-                # Advance cursor to max emitted id
-                await _write_cursor(sb, max_id)
+                # ✅ Wrap cursor write in to_thread as well
+                await asyncio.to_thread(lambda: asyncio.run(_write_cursor(sb, max_id)))
                 since_id = max(since_id, max_id)
 
                 log.info(
                     "poll: fetched=%d burst_capped=%s advanced_cursor=%s sleep=%sms",
-                    len(rows), burst_capped, since_id, POLL_MS
+                    len(rows), burst_capped, since_id, POLL_MS,
                 )
 
             except Exception as e:
